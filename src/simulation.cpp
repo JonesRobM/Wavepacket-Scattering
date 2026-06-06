@@ -16,7 +16,37 @@ void initialise_system(
     double norm_sum = 0.0; // Variable to accumulate the normalization factor
 
     // 1. Populate the wavefunction and potential grid
+    // What we start with is picking up J from the header and looping over the spatial grid points to populate the wavefunction and potential
     for (int j = 0; j< config.J; ++j) {
         double x = j * config.dx; // Calculate the spatial position corresponding to the grid point j. We get dx from the config struct which defines the spatial step size
+
+        // Now we build the potential barrier. We check if the position x falls within the defined barrier region and set the potential accordingly
+        if ( x>= config.barrier_start && x <= config.barrier_end) {
+            V[j] = config.V0; // Set the potential at grid point j to the barrier height V0 if it falls within the barrier region
+        }
+        // Now we setup the un-nomrlaised gasusian wavepacket
+        // We calculate the amplitude of the wavefunction at each grid point using the modulated gaussian formula
+        //  exp(- (x - x0)^2 / (2*sigma^2)) * exp(i * k0 * x) where x0 is the initial position of the wavepacket and sigma is its width
+        double phase = config.k0 * x; // Calculate the phase of the wavefunction at position x based on the initial momentum k0
+        Complex spatial_part = std::exp(-std::pow(x - config.x0, 2) / (2.0 * std::pow(config.sigma,2))); // Calculate the spatial part of the wavefunction using the Gaussian formula
+        Complex momentum_part  = Complex(std::cos(phase), std::sin(phase)); // Calculate the momentum part of the wavefunction using Euler's formula to convert the phase into a complex exponential
+        
+        psi[j] = spatial_part * momentum_part; // Combine the spatial and momentum parts to get the un-normalized wavefunction at grid point j
+        norm_sum += std::norm(psi[j]) * config.dx; // Accumulate the normalization factor by summing the squared magnitude of the wavefunction at each grid point multiplied by the spatial step size
+    }
+
+    // 2. Normalise the wavefunction
+    double  norm_factor = std::sqrt(norm_sum); // Calculate the normalization factor by taking the square root of the accumulated norm sum
+    for (int j =0; j < config,J ++j) {
+        psi[j] /= norm_factor; // Normalize the wavefunction at each grid point by dividing it by the normalization factor
     }
 }
+
+void run_simulation(const SimConfig& config,
+                    const std::vector<double>& V,
+                    std::vector<Complex>& psi_current,
+                    const std::string& output_file) {
+                
+        std::ofstream out_file(output_file);
+        std::vector<Complex> psi_next(config.J, 0.0);
+                    }
