@@ -1,6 +1,9 @@
 /// This header will handle the data types, data structures, and structural framework for the loop
 /// It relies only on standard libraries and headers
 
+/// The main purpose of this header is to define the SimConfig struct which encapsulates all the
+/// simulation parameters and to declare the functions for initializing the system and performing time evolution
+
 #ifndef SIMULATION_HPP
 #define SIMULATION_HPP
 
@@ -11,6 +14,7 @@
 using Complex = std::complex<double>;
 
 /// Now I will write a container for all the simulation and the physical parameters
+
 
 struct SimConfig {
     int J = 1000; // The number of grid points in the lattice
