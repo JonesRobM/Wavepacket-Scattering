@@ -45,7 +45,8 @@ void initialise_system(
 void run_simulation(const SimConfig& config, // We pass the configuration struct to the simulation function, which contains all the parameters needed for the simulation
                     const std::vector<double>& V, // This initialises the potential grid which we will use in the time evolution loop
                     std::vector<Complex>& psi_current, // This is the current state of the wavefunction which will be updated at each time step
-                    const std::string& output_file) { // The name of the output file where we will write the results of the simulation
+                    // The name of the output file where we will write the results of the simulation
+                    const std::string& output_file) { 
                 
                     std::ofstream out_file(output_file); // Open the output file for writing. This will create the file if it doesn't exist or overwrite it if it does
                     std::vector<Complex> psi_next(config.J, 0.0); // Create a vector to hold the next state of the wavefunction, initialized to zero
@@ -57,6 +58,9 @@ void run_simulation(const SimConfig& config, // We pass the configuration struct
                 
                     // Now we do some time looping
                     for (int n = 0; n < config.Nt; n++) {
+
+                        if (n % config.write_interval == 0) {
+
                         for (int j = 0; j < config.J; ++j) {
                             // Write the probability density at each grid point to the output file, separated by commas
                             //We check if it's the last grid point to avoid adding a comma at the end of the line
@@ -65,5 +69,23 @@ void run_simulation(const SimConfig& config, // We pass the configuration struct
                         }
                         out_file << "\n"; // Add a newline after writing the probability density for all grid points at the current time step
                     }
-                    
+
+                    // Explicit finite difference interior updte step
+                    // Keep the hard Dirichlet boundary: psi_next[0] = psi_next[J-1] = 0.0
+                    for (int j =1; j < config.J -1; ++j) {
+                        // Start with the laplacian term which is the second spatial derivative of the wavefunction, approximated using the central difference formula
+                        Complex laplacian = psi_current[j+1] - 2.0 * psi_current[j] + psi_current[j-1];
+                        Complex kinetic_term = alpha * laplacian; // Calculate the kinetic term by multiplying the laplacian by the pre-calculated constant alpha
+                        // Now we calculate the potential term which is the product of the potential at point j and the wavefunction at point j
+                        // This is multiplied by the pre-calculated constant beta to get the correct scaling for the time evolution
+                        Complex potential_term = beta * V[j] * psi_current[j];  
+
+                        // Solving psi_next = psi_current + i * (kinetic_term - potential_term)
+                        // Gives us the explicit finite difference update for the wavefunction at the next time step
+                        psi_next[j] = psi_current[j] + i * (kinetic_term - potential_term); 
+                    }
+
+                    // Zero-overhead state rotation swap for the next time interval iteration
+                    std::swap(psi_current, psi_next);
                 }
+            }
