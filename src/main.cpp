@@ -63,3 +63,35 @@
 /// This format allows for easy post-processing and visualization of the wavefunction evolution over time
 /// Every mth time step the loop will iterate over a spatial array from j - 0 to J-1 and dump a row of text
 
+#include "simulation.hpp"
+#include <iostream>
+#include <string>
+
+int main() {
+    std:: cout << "Initialising the super-duper 1d quantum wavepacket FDTD engine ...\n";
+
+    SimConfig config; // Create an instance of the SimConfig struct to hold all the simulation parameters
+
+    // Calculate the stability parameter alpha to check if the chosen time step and spatial step satisfy the stability condition for the explicit finite difference scheme
+    double stability_check = ( config.hbar * config.dt ) / (2.0 * config.mass * std::pow(config.dx, 2)); 
+    
+    if (stability_check > 0.5) {
+        std::cerr << "Warning: The chosen time step and spatial step may lead to numerical instability. Consider reducing dt or increasing dx to satisfy the stability condition.\n"
+                    << "Alpha = " << stability_check << " should be less than or equal to 0.5 for stability.\n";
+        return 1; // Exit the program with an error code to indicate that the parameters are not suitable for a stable simulation
+    }
+
+    std::vector<Complex> psi;
+    std::vector<double> V;
+
+    // Call the function to initialize the wavefunction and potential based on the configuration parameters
+    initialise_system(config, psi, V); 
+
+    std::string data_path = "output/simulation_output.csv"; // Define the path for the output file where the simulation results will be written
+    std::cout << "Beginning numerical time evolution. Writing results to " << data_path << "\n";
+
+    run_simulation(config, V, psi, data_path);
+
+    std::cout << "Simulation complete. Pipeline terminated cleanly. Results written to " << data_path << "\n";
+    return 0; // Exit the program with a success code to indicate that the simulation completed successfully
+}
