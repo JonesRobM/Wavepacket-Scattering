@@ -87,7 +87,7 @@ int main() {
     // Call the function to initialize the wavefunction and potential based on the configuration parameters
     initialise_system(config, psi, V); 
 
-    std::string data_path = "output/simulation_output.csv"; // Define the path for the output file where the simulation results will be written
+    std::string data_path = std::string(PROJECT_ROOT_DIR) + "/output/simulation_data.csv";
     std::cout << "Beginning numerical time evolution. Writing results to " << data_path << "\n";
 
     run_simulation(config, V, psi, data_path);

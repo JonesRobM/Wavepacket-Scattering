@@ -13,13 +13,16 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -O3)
 endif()
 
-# Define the executable target and specify the source files
-
-
+# 1. First, define the executable and its source files
 add_executable(QuantumScattering
     src/main.cpp
     src/simulation.cpp
     src/simulation.hpp
+)
+
+# 2. Then, apply target-specific configurations now that the target exists
+target_compile_definitions(QuantumScattering PRIVATE 
+    PROJECT_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 # Specify the include directory for compilation

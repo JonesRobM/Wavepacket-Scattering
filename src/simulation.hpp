@@ -41,8 +41,9 @@ void initialise_system(const SimConfig& config, // Pass the config struct by con
                         std::vector<Complex>& psi, // Pass the wavefunction vector by reference to populate it with the initial wavepacket
                         std::vector<double>& V); // Pass the potential vector by reference to populate it with the potential barrier
 
-void time_evolve(const SimConfig& config, // Pass the config struct by const reference to access the simulation parameters
+void run_simulation(const SimConfig& config, // Pass the config struct by const reference to access the simulation parameters
                     const std::vector<double>& V, // Pass the potential vector by const reference as it is not modified during time evolution
                     std::vector<Complex>& psi, // Pass the wavefunction vector by reference to update it in place during time evolution
                     const std::string& output_file); // Pass the output file name as a const reference to avoid unnecessary copying
+                    
 #endif // SIMULATION_HPP
