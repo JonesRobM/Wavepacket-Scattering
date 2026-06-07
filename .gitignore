@@ -61,9 +61,10 @@ output/
 
 # vcpkg
 vcpkg_installed/
-
+.venv/
 # debug information files
 *.dwo
+*.egg*
 
 # test output & cache
 Testing/
