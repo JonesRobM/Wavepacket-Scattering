@@ -37,16 +37,33 @@ void initialise_system(
 
     // 2. Normalise the wavefunction
     double  norm_factor = std::sqrt(norm_sum); // Calculate the normalization factor by taking the square root of the accumulated norm sum
-    for (int j =0; j < config,J ++j) {
+    for (int j =0; j < config.J; ++j) {
         psi[j] /= norm_factor; // Normalize the wavefunction at each grid point by dividing it by the normalization factor
     }
 }
 
-void run_simulation(const SimConfig& config,
-                    const std::vector<double>& V,
-                    std::vector<Complex>& psi_current,
-                    const std::string& output_file) {
+void run_simulation(const SimConfig& config, // We pass the configuration struct to the simulation function, which contains all the parameters needed for the simulation
+                    const std::vector<double>& V, // This initialises the potential grid which we will use in the time evolution loop
+                    std::vector<Complex>& psi_current, // This is the current state of the wavefunction which will be updated at each time step
+                    const std::string& output_file) { // The name of the output file where we will write the results of the simulation
                 
-        std::ofstream out_file(output_file);
-        std::vector<Complex> psi_next(config.J, 0.0);
+                    std::ofstream out_file(output_file); // Open the output file for writing. This will create the file if it doesn't exist or overwrite it if it does
+                    std::vector<Complex> psi_next(config.J, 0.0); // Create a vector to hold the next state of the wavefunction, initialized to zero
+
+                    // Pre-calculate the dimensionless constant groups to reduce the loop arithmetic
+                    double alpha = (config.hbar * config.dt) / (2.0 * config.mass * std::pow(config.dx, 2));
+                    double beta = (config.dt / config.hbar);
+                    const Complex i(0.0, 1.0); // Define the imaginary unit as a complex number
+                
+                    // Now we do some time looping
+                    for (int n = 0; n < config.Nt; n++) {
+                        for (int j = 0; j < config.J; ++j) {
+                            // Write the probability density at each grid point to the output file, separated by commas
+                            //We check if it's the last grid point to avoid adding a comma at the end of the line
+                
+                            out_file << std::norm(psi_current[j]) << (j == config.J -1 ? "" : ","); 
+                        }
+                        out_file << "\n"; // Add a newline after writing the probability density for all grid points at the current time step
                     }
+                    
+                }
