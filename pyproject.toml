@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "QuantumScattering"
+version = "1.0.0"
+description = "Post-processing and analysis pipeline for 1D FDTD Quantum Wavepacket simulations"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Robert Jones" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+# Core dependencies required by scripts/plot_tools.py and the notebook
+dependencies = [
+    "numpy>=1.22.0",
+    "matplotlib>=3.5.0",
+    "notebook>=7.0.0",  # Provides the Jupyter notebook runtime environment
+]
+
+[tool.setuptools]
+# Treats the local scripts folder as a discoverable package module
+packages = ["scripts"]
