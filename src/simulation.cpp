@@ -21,9 +21,19 @@ void initialise_system(
         double x = j * config.dx; // Calculate the spatial position corresponding to the grid point j. We get dx from the config struct which defines the spatial step size
 
         // Now we build the potential barrier. We check if the position x falls within the defined barrier region and set the potential accordingly
+        
+        // We start with the regular barrier
         if ( x>= config.barrier_start && x <= config.barrier_end) {
             V[j] = config.V0; // Set the potential at grid point j to the barrier height V0 if it falls within the barrier region
         }
+
+        // Now we add the harmonic potential
+
+        if (x >= config.harmonic_barrier_start && x <= config.harmonic_barrier_end) {
+            V[j] += 0.5 * config.k_harmonic * std::pow(x - config.harmonic_x0, 2); // Add the harmonic barrier height to the potential at grid point j if it falls within the harmonic barrier region
+        }
+
+
         // Now we setup the un-nomrlaised gasusian wavepacket
         // We calculate the amplitude of the wavefunction at each grid point using the modulated gaussian formula
         //  exp(- (x - x0)^2 / (2*sigma^2)) * exp(i * k0 * x) where x0 is the initial position of the wavepacket and sigma is its width
@@ -55,7 +65,12 @@ void run_simulation(const SimConfig& config, // We pass the configuration struct
                     double alpha = (config.hbar * config.dt) / (2.0 * config.mass * std::pow(config.dx, 2));
                     double beta = (config.dt / config.hbar);
                     const Complex i(0.0, 1.0); // Define the imaginary unit as a complex number
-                
+                    Complex a = (i * config.hbar * config.dt) / (4.0 * config.mass * std::pow(config.dx, 2));
+                    double half_dt_over_hbar = config.dt / (2.0 * config.hbar);
+                    // Diagonal elements vectors
+                    std::vector<Complex> c_prime(config.J, 0.0);
+                    std::vector<Complex> d(config.J, 0.0);
+
                     // Now we do some time looping
                     for (int n = 0; n < config.Nt; n++) {
 
@@ -72,20 +87,40 @@ void run_simulation(const SimConfig& config, // We pass the configuration struct
 
                     // Explicit finite difference interior updte step
                     // Keep the hard Dirichlet boundary: psi_next[0] = psi_next[J-1] = 0.0
-                    for (int j =1; j < config.J -1; ++j) {
-                        // Start with the laplacian term which is the second spatial derivative of the wavefunction, approximated using the central difference formula
-                        Complex laplacian = psi_current[j+1] - 2.0 * psi_current[j] + psi_current[j-1];
-                        Complex kinetic_term = alpha * laplacian; // Calculate the kinetic term by multiplying the laplacian by the pre-calculated constant alpha
-                        // Now we calculate the potential term which is the product of the potential at point j and the wavefunction at point j
-                        // This is multiplied by the pre-calculated constant beta to get the correct scaling for the time evolution
-                        Complex potential_term = beta * V[j] * psi_current[j];  
-
-                        // Solving psi_next = psi_current + i * (kinetic_term - potential_term)
-                        // Gives us the explicit finite difference update for the wavefunction at the next time step
-                        psi_next[j] = psi_current[j] + i * (kinetic_term - potential_term); 
-                    }
-
-                    // Zero-overhead state rotation swap for the next time interval iteration
-                    std::swap(psi_current, psi_next);
+                    for (int j = 1; j < config.J - 1; ++j) {
+                                        Complex b_j = i * half_dt_over_hbar * V[j];
+                                        
+                                        // Known values from current time step n
+                                        d[j] = a * psi_current[j-1] + (1.0 - 2.0 * a - b_j) * psi_current[j] + a * psi_current[j+1];
+                                    }
+                                    
+                                    // Boundary conditions for the tridiagonal system (Hard Dirichlet walls)
+                                    Complex active_diag_0 = 1.0; 
+                                    c_prime[0] = 0.0;
+                                    d[0] = 0.0; 
+                                    
+                                    // STEP 2: Forward Elimination Phase
+                                    for (int j = 1; j < config.J - 1; ++j) {
+                                        // Step 1 We compute the potential derivatvive
+                                        Complex b_j = i * half_dt_over_hbar * V[j];
+                                        Complex main_diag = 1.0 + 2.0 * a + b_j;
+                                        Complex lower_diag = -a;
+                                        Complex upper_diag = -a;
+                                        
+                                        Complex denominator = main_diag - lower_diag * c_prime[j-1];
+                                        c_prime[j] = upper_diag / denominator;
+                                        d[j] = (d[j] - lower_diag * d[j-1]) / denominator;
+                                    }
+                                    
+                                    // Set boundary condition at the right wall
+                                    psi_next[config.J - 1] = 0.0;
+                                    
+                                    // STEP 3: Backward Substitution Phase
+                                    for (int j = config.J - 2; j >= 0; --j) {
+                                        psi_next[j] = d[j] - c_prime[j] * psi_next[j+1];
+                                    }
+                                    
+                                    // Rotate state buffers
+                                    std::swap(psi_current, psi_next);
                 }
             }
