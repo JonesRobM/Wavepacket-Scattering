@@ -66,7 +66,7 @@ def verify_probability_conservation(
         Ideally very close to a unit vector
     """
     
-    return np.trapz(matrix, dx = dx, axis=1)
+    return np.trapezoid(matrix, dx = dx, axis=1)
 
 def calculate_expected_position(
     matrix: np.ndarray, x_axis: np.ndarray, dx: float) -> np.ndarray:
@@ -79,7 +79,7 @@ def calculate_expected_position(
         np.ndarray: A 1D array containing the expected position at each time step
     """
     weighted_probability = matrix * x_axis
-    return np.trapz(weighted_probability, dx = dx, axis=1)
+    return np.trapezoid(weighted_probability, dx = dx, axis=1)
 
 def plot_wavefunction(
     matrix: np.ndarray,
